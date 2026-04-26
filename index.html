@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kata Robata Scheduler</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#18160F;--ink2:#4A4538;--ink3:#8A8070;--ink4:#C0B8A8;--sand:#F8F4EE;--sand2:#EFE9DF;--sand3:#E5DDD0;--gold:#BFA46A;--gold2:#8A7240;--golda:rgba(191,164,106,.13);--white:#FFF;--green:#1E5A38;--red:#7A1808;--r:4px;--sh:0 8px 48px rgba(24,22,15,.1);--shs:0 2px 16px rgba(24,22,15,.07)}
+html,body{background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--sand2)}::-webkit-scrollbar-thumb{background:var(--sand3);border-radius:99px}
+.tb{position:fixed;inset:0 0 auto 0;z-index:500;background:var(--ink);border-bottom:1px solid rgba(191,164,106,.15)}
+.tb-inner{display:flex;align-items:center;justify-content:space-between;padding:10px 24px 0;flex-wrap:wrap;gap:0}
+.tb-brand{display:flex;flex-direction:column;gap:2px;padding-bottom:8px}
+.tb-name{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);letter-spacing:.5px;line-height:1.1}
+.tb-sub{font-size:7px;letter-spacing:4px;text-transform:uppercase;color:rgba(191,164,106,.4);font-weight:300}
+.tb-tabs{display:flex}
+.tab{background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:8px 16px 10px;transition:color .2s,border-color .2s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tab:hover{color:rgba(255,255,255,.65)}.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.badge{background:var(--gold);color:var(--ink);border-radius:99px;padding:1px 6px;font-size:8px;font-weight:700}
+.ht{height:72px}
+.pg{min-height:100vh}
+.wr{max-width:1200px;margin:0 auto;padding:36px 24px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g21{display:grid;grid-template-columns:5fr 3fr;gap:20px}
+@media(max-width:760px){.g2,.g21{grid-template-columns:1fr}.tb-inner{gap:0}.tb-tabs{width:100%}.tab{flex:1;justify-content:center;padding:7px 4px 9px;font-size:8px;letter-spacing:1.5px}}
+.hero{margin-bottom:32px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:1px solid var(--sand3);padding-bottom:20px;flex-wrap:wrap}
+.h-eye{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.h-ttl{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;line-height:1}
+.h-ttl em{font-style:italic;color:var(--gold)}
+.h-r{text-align:right}.h-date{font-family:'Playfair Display',serif;font-size:13px;color:var(--ink2)}.h-sub{font-size:11px;color:var(--ink3);margin-top:3px}
+.card{background:var(--white);border:1px solid var(--sand3);border-radius:var(--r);padding:24px;box-shadow:var(--shs);position:relative;overflow:hidden;margin-bottom:16px}
+.card-stripe{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),rgba(191,164,106,.1) 70%,transparent)}
+.clbl{font-size:9px;letter-spacing:3.5px;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.clbl::after{content:'';flex:1;height:1px;background:var(--sand3)}
+.divhr{height:1px;background:var(--sand2);margin:16px 0}
+.lbl{display:block;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--ink2);font-weight:500;margin-bottom:6px}
+.lbl-s{opacity:.5;text-transform:none;letter-spacing:0;font-weight:300;font-size:8px}
+.fi{width:100%;padding:10px 13px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:var(--ink);outline:none;transition:border .18s;-webkit-appearance:none;appearance:none;display:block}
+.fi:focus{border-color:var(--gold);background:#FEFCF7;box-shadow:0 0 0 3px rgba(191,164,106,.13)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+.fld{margin-bottom:13px}
+textarea.fi{height:66px;resize:none;line-height:1.55}
+.stg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--sand3);border-radius:var(--r);overflow:hidden;margin-bottom:13px}
+.sb{padding:10px 0;text-align:center;cursor:pointer;background:var(--sand);border:none;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink3);transition:all .2s;width:100%}
+.sb+.sb{border-left:1px solid var(--sand3)}.sb.am{background:#FFF9EC;color:#8A6800;font-weight:500}.sb.pm{background:#F0F0FF;color:#2A2A98;font-weight:500}
+.toggle{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);cursor:pointer;user-select:none;margin-bottom:13px;transition:border .18s}
+.toggle:hover{border-color:var(--gold)}.toggle.on{background:var(--golda);border-color:var(--gold)}
+.trk{width:34px;height:19px;background:var(--sand3);border-radius:99px;position:relative;transition:background .2s;flex-shrink:0}
+.trk.on{background:var(--gold)}.tth{width:13px;height:13px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}.trk.on .tth{left:18px}
+.tl{font-size:13px;color:var(--ink2)}.ts{font-size:11px;color:var(--ink3);font-weight:300;margin-top:1px}
+.btn{display:block;width:100%;padding:13px;background:var(--ink);color:var(--gold);border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all .22s;margin-top:4px}
+.btn:hover{background:#2E2B20;letter-spacing:5px}
+.al{padding:11px 14px;border-radius:var(--r);font-size:12px;font-weight:300;margin-bottom:14px;line-height:1.5}
+.a-e{background:rgba(138,32,16,.07);border-left:2px solid #B43C28;color:var(--red)}
+.a-o{background:rgba(61,107,80,.07);border-left:2px solid #4A8C64;color:#1E5A38}
+.a-i{background:var(--golda);border-left:2px solid var(--gold);color:var(--gold2)}
+.notice{background:var(--sand2);border:1px solid var(--sand3);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12px;color:var(--ink2);font-weight:300;line-height:1.9}
+.notice p{padding-left:12px;position:relative;margin-bottom:2px}
+.notice p::before{content:'·';position:absolute;left:0;color:var(--gold)}
+.notice strong{font-weight:500;color:var(--ink)}
+.chip{display:inline-block;font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:2px 7px;border-radius:2px}
+.c-am{background:#FFF3CC;color:#8A6800}.c-pm{background:#EBEBFF;color:#282890}.c-allday{background:var(--golda);color:var(--gold2)}
+.c-pending{background:#FFF3CC;color:#7A5000}.c-approved{background:#E2F0E8;color:#1E5A38}.c-denied{background:#FAE8E4;color:var(--red)}
+.c-mgr{background:rgba(191,164,106,.2);color:var(--gold2)}.c-staff{background:var(--sand2);color:var(--ink2)}
+.rbadge{font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:500;padding:2px 7px;border-radius:2px}
+.rr{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--sand2)}
+.rr:last-child{border-bottom:none}
+.rr-n{font-family:'Playfair Display',serif;font-size:14px;font-weight:400;flex:1;color:var(--ink)}
+.rr-dates{font-size:11px;color:var(--ink3);font-weight:300;margin-top:1px}
+.e-note{font-size:12px;color:var(--ink4);font-style:italic;padding:5px 0;font-weight:300}
+.sh-hd{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-weight:500;padding:6px 11px;border-radius:2px;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+.sh-am{background:#FFF8EC;color:#8A6800}.sh-pm{background:#EFEFFF;color:#28288A}.sh-all{background:var(--golda);color:var(--gold2)}
+.d-pill{font-family:'Playfair Display',serif;font-size:14px;text-align:center;padding:10px 14px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);color:var(--ink);margin-bottom:18px}
+.m-ban{background:#FFFAED;border-left:2px solid var(--gold);padding:10px 13px;font-size:12px;color:#7A5800;font-weight:300;margin-bottom:14px;border-radius:0 var(--r) var(--r) 0;line-height:1.5}
+.closed-ban{background:rgba(100,20,20,.07);border-left:2px solid #B43C28;padding:10px 13px;font-size:12px;color:var(--red);font-weight:400;margin-bottom:14px;border-radius:0 var(--r) var(--r) 0}
+.orn{text-align:center;font-size:12px;letter-spacing:10px;color:var(--gold);opacity:.3;margin:8px 0 14px}
+.av-h{font-size:9px;letter-spacing:3.5px;text-transform:uppercase;color:var(--gold);font-weight:500;margin:18px 0 12px;display:flex;align-items:center;gap:10px}
+.av-h::before,.av-h::after{content:'';flex:1;height:1px;background:var(--sand3)}
+.av-role{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--sand2)}
+.av-role:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.av-rn{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-weight:500;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.av-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.dots{display:flex;gap:4px}.dot{width:8px;height:8px;border-radius:50%}
+.av-t{font-size:11px;font-weight:300;color:var(--ink3)}.av-full{color:#B43C28;font-weight:500}
+.pg-gate{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 72px);background:radial-gradient(ellipse at 50% 20%,rgba(191,164,106,.05) 0%,transparent 65%)}
+.pin-box{background:var(--white);border:1px solid var(--sand3);border-radius:var(--r);padding:52px 56px;text-align:center;box-shadow:var(--sh);max-width:380px;width:100%;position:relative;overflow:hidden}
+.pin-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.p-orn{font-family:'Playfair Display',serif;font-size:44px;color:var(--gold);opacity:.2;line-height:1;margin-bottom:14px}
+.p-ttl{font-family:'Playfair Display',serif;font-size:26px;font-weight:400;margin-bottom:5px}
+.p-sub{font-size:12px;color:var(--ink3);font-weight:300;margin-bottom:24px}
+.p-in{width:100%;padding:12px 16px;text-align:center;font-family:'Playfair Display',serif;font-size:26px;font-weight:400;letter-spacing:16px;color:var(--ink);background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);outline:none;transition:all .2s;margin-bottom:14px}
+.p-in:focus{border-color:var(--gold);background:#FEFCF7;box-shadow:0 0 0 3px rgba(191,164,106,.12)}
+.pb{background:var(--ink);border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shs)}
+.pb-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite;flex-shrink:0}
+.pb-num{font-family:'Playfair Display',serif;font-size:34px;color:var(--gold);line-height:1;min-width:40px;text-align:center}
+.pb-t{font-size:13px;font-weight:500;color:#fff;margin-bottom:2px}.pb-s{font-size:11px;color:rgba(255,255,255,.4);font-weight:300}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+.mg-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--sand3);gap:14px;flex-wrap:wrap}
+.lk{background:transparent;border:1px solid var(--sand3);border-radius:var(--r);padding:7px 18px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink2);transition:all .18s}
+.lk:hover{border-color:var(--ink);color:var(--ink)}
+.vbtns{display:flex;gap:8px;margin-bottom:16px}
+.vbtn{padding:6px 14px;border:1px solid var(--sand3);border-radius:var(--r);background:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink2);transition:all .18s}
+.vbtn:hover{border-color:var(--gold);color:var(--gold2)}.vbtn.on{background:var(--ink);color:var(--gold);border-color:var(--ink)}
+.fbar{background:var(--white);border:1px solid var(--sand3);border-radius:var(--r);padding:12px 16px;display:flex;gap:14px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+.ff{display:flex;flex-direction:column;gap:5px}
+.ff label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);font-weight:500}
+.ff select,.ff input[type=date]{padding:7px 10px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none;min-width:110px;cursor:pointer}
+.mc{border:1px solid var(--sand3);border-radius:var(--r);padding:16px 18px;margin-bottom:9px;background:var(--sand)}
+.mc-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap}
+.mc-n{font-family:'Playfair Display',serif;font-size:18px;font-weight:400;flex:1;min-width:90px}
+.mc-m{font-size:11px;color:var(--ink3);font-weight:300;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;line-height:1.5}
+.mc-a{display:flex;gap:6px;flex-wrap:wrap}
+.ab{padding:5px 13px;border:1px solid;border-radius:2px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:400;transition:all .18s;background:transparent}
+.ab:disabled{opacity:.3;cursor:default}
+.ab-a{border-color:#4A8C64;color:#1E5A38}.ab-a:hover:not(:disabled){background:#1E5A38;color:#fff}
+.ab-d{border-color:#B43C28;color:var(--red)}.ab-d:hover:not(:disabled){background:var(--red);color:#fff}
+.ab-p{border-color:var(--sand3);color:var(--ink3)}.ab-p:hover:not(:disabled){border-color:var(--gold);color:var(--gold2)}
+.notif-sec{margin-top:10px;padding-top:10px;border-top:1px solid var(--sand2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notif-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-weight:500}
+.nb{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--sand3);border-radius:2px;background:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink2);transition:all .18s;text-decoration:none}
+.nb:hover{border-color:var(--gold);color:var(--gold2)}
+.nall{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--golda);border:1px solid rgba(191,164,106,.3);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}
+.nall-t{font-size:12px;color:var(--gold2);flex:1}
+.nall-btn{padding:6px 14px;background:var(--ink);color:var(--gold);border:none;border-radius:2px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-weight:500}
+.note-bar{display:flex;gap:8px;margin-bottom:8px}
+.note-sv{padding:8px 14px;background:var(--ink);color:var(--gold);border:none;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+.close-row{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);margin-bottom:12px}
+.close-row.closed{background:rgba(100,20,20,.06);border-color:rgba(180,60,40,.3)}
+.ct-btn{padding:5px 12px;border:1px solid;border-radius:2px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;background:transparent}
+.ct-btn.close{border-color:#B43C28;color:#B43C28}.ct-btn.close:hover{background:#B43C28;color:#fff}
+.ct-btn.reopen{border-color:#4A8C64;color:#1E5A38}.ct-btn.reopen:hover{background:#1E5A38;color:#fff}
+.cap-r{margin-bottom:16px}.cap-rn{font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.cap-sr{margin-bottom:7px}.cap-l{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--ink3)}
+.cap-tr{height:4px;background:var(--sand3);border-radius:99px;overflow:hidden}.cap-f{height:100%;border-radius:99px;transition:width .4s}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:16px}
+.sbox{background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);padding:12px 8px;text-align:center}
+.sn{font-family:'Playfair Display',serif;font-size:32px;font-weight:400;line-height:1}.sl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-mo{font-family:'Playfair Display',serif;font-size:20px;font-weight:400}
+.cal-btn{background:transparent;border:1px solid var(--sand3);border-radius:var(--r);padding:5px 12px;cursor:pointer;font-size:14px;color:var(--ink2)}
+.cal-btn:hover{border-color:var(--gold)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.cal-dh{text-align:center;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);font-weight:500;padding:5px 0}
+.cal-cell{min-height:72px;background:var(--white);border:1px solid var(--sand3);border-radius:2px;padding:5px;cursor:pointer;transition:border-color .15s}
+.cal-cell:hover{border-color:var(--gold)}.cal-cell.today{border-color:var(--gold);background:#FEFCF7}.cal-cell.om{background:var(--sand);opacity:.4}
+.cal-cell.closed-day{background:rgba(100,20,20,.05);border-color:rgba(180,60,40,.25)}
+.cal-num{font-size:11px;font-weight:500;color:var(--ink2);margin-bottom:2px}.cal-cell.today .cal-num{color:var(--gold);font-weight:700}.cal-cell.closed-day .cal-num{color:#B43C28}
+.cal-hol{font-size:7px;color:var(--gold2);line-height:1.2;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cal-closed{font-size:7px;color:#B43C28;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.cal-dot{display:flex;align-items:center;gap:2px;font-size:8px;color:var(--ink2);margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dot-sm{width:5px;height:5px;border-radius:50%;flex-shrink:0}.cal-more{font-size:7px;color:var(--ink3);font-style:italic}
+.modal-bg{position:fixed;inset:0;background:rgba(24,22,15,.4);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--white);border-radius:var(--r);padding:28px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--sh);position:relative}
+.modal-x{position:absolute;top:12px;right:14px;background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink3)}
+.modal-t{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;margin-bottom:4px}.modal-hol{font-size:12px;color:var(--gold2);font-weight:500;margin-bottom:14px}
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 72px)}
+.chat-hdr{padding:18px 24px 14px;border-bottom:1px solid var(--sand3);background:var(--white)}
+.chat-ttl{font-family:'Playfair Display',serif;font-size:24px;font-weight:400}.chat-ttl em{font-style:italic;color:var(--gold)}
+.chat-sub{font-size:12px;color:var(--ink3);margin-top:2px;font-weight:300}
+.chat-msgs{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px;background:var(--sand)}
+.msg{display:flex;flex-direction:column;max-width:72%;gap:3px}
+.msg.mgr{align-self:flex-end;align-items:flex-end}.msg.staff{align-self:flex-start;align-items:flex-start}
+.msg-meta{font-size:10px;color:var(--ink3);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.msg-bub{padding:11px 15px;border-radius:12px;font-size:13px;font-weight:300;line-height:1.6;word-break:break-word}
+.msg.mgr .msg-bub{background:var(--ink);color:var(--gold);border-bottom-right-radius:3px}
+.msg.staff .msg-bub{background:var(--white);color:var(--ink);border:1px solid var(--sand3);border-bottom-left-radius:3px;box-shadow:var(--shs)}
+.chat-in{padding:14px 24px;background:var(--white);border-top:1px solid var(--sand3)}
+.chat-row1{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.cin{padding:8px 12px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+.cin:focus{border-color:var(--gold)}
+.chat-row2{display:flex;gap:8px}
+.chat-ta{flex:1;padding:9px 12px;background:var(--sand);border:1px solid var(--sand3);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:var(--ink);outline:none;resize:none;height:42px;line-height:1.5}
+.chat-ta:focus{border-color:var(--gold)}
+.chat-send{padding:9px 18px;background:var(--ink);color:var(--gold);border:none;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-weight:500;white-space:nowrap}
+.chat-send:hover{background:#2E2B20}
+.sync-bar{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:var(--gold);text-align:center;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:6px;z-index:600;font-family:'DM Sans',sans-serif}
+.tw{position:fixed;bottom:30px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--ink);color:var(--gold);border:1px solid rgba(191,164,106,.25);border-radius:var(--r);padding:12px 16px;font-size:12px;font-weight:300;box-shadow:var(--sh);max-width:300px;line-height:1.5;animation:tIn .3s ease}
+.t-ok{border-left:3px solid #4A8C64}.t-e{border-left:3px solid #B43C28}.t-i{border-left:3px solid var(--gold)}
+@keyframes tIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.set-step{display:flex;gap:12px;margin-bottom:12px}
+.sn-num{width:24px;height:24px;border-radius:50%;background:var(--golda);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:var(--gold2);flex-shrink:0;margin-top:2px}
+.st-t{font-size:12px;font-weight:300;line-height:1.7;color:var(--ink2)}
+.empty{text-align:center;padding:40px 0;color:var(--ink3)}
+.empty-g{font-family:'Playfair Display',serif;font-size:40px;color:var(--sand3);margin-bottom:10px}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;font-family:'Playfair Display',serif;font-size:18px;color:var(--ink3);font-style:italic}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading">Connecting to Kata Robata Scheduler...</div>
+</div>
+
+<script>
+// ══ FIREBASE CONFIG ══════════════════════════════════════
+var DB_URL = "https://kata-robata-scheduler-default-rtdb.firebaseio.com";
+
+// ══ EMAILJS CONFIG ════════════════════════════════════════
+var EMAILJS_SERVICE_ID  = "service_87p9u0r";
+var EMAILJS_TEMPLATE_ID = "template_vwss2g8";
+var EMAILJS_PUBLIC_KEY  = "hGoEGkxSVIJ2QJTfw";
+
+function sendStaffEmail(toEmail, toName, subject, message) {
+  return fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      template_params: {
+        to_email: toEmail,
+        to_name: toName,
+        subject: subject,
+        message: message
+      }
+    })
+  })
+  .then(function(r) { return {ok: r.ok, status: r.status}; })
+  .catch(function(e) { return {ok: false, error: e.message}; });
+}
+
+// ══ APP CONFIG ═══════════════════════════════════════════
+var MGR_PIN         = "0063";
+var MIN_NOTICE_DAYS = 21;
+var STAFF_ROLES     = ["Server","Host","Bartender","Expo"];
+var ALL_ROLES       = ["Server","Host","Bartender","Expo","Manager"];
+var SHIFTS          = ["AM","PM"];
+var LIMITS          = {Server:4,Host:3,Bartender:3,Expo:3};
+var ROLE_COLORS     = {Server:"#BFA46A",Host:"#7FA88A",Bartender:"#7A9AB5",Expo:"#A87898",Manager:"#C8A96E"};
+var ROLE_GLYPHS     = {Server:"◈",Host:"◇",Bartender:"◆",Expo:"◉",Manager:"⌘"};
+var MONTHS          = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var DAYS            = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+// ══ FIREBASE HELPERS ══════════════════════════════════════
+function dbGet(path, cb) {
+  fetch(DB_URL + "/" + path + ".json")
+    .then(function(r){return r.json();})
+    .then(function(data){cb(null, data);})
+    .catch(function(e){cb(e, null);});
+}
+function dbSet(path, data, cb) {
+  fetch(DB_URL + "/" + path + ".json", {
+    method: "PUT",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(data)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){if(cb)cb(null,d);})
+  .catch(function(e){if(cb)cb(e,null);});
+}
+function dbPush(path, data, cb) {
+  fetch(DB_URL + "/" + path + ".json", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(data)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){if(cb)cb(null,d);})
+  .catch(function(e){if(cb)cb(e,null);});
+}
+function dbDelete(path, cb) {
+  fetch(DB_URL + "/" + path + ".json", {method:"DELETE"})
+    .then(function(){if(cb)cb(null);})
+    .catch(function(e){if(cb)cb(e);});
+}
+
+// Poll for updates every 5 seconds
+var pollInterval = null;
+function startPolling() {
+  if(pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(function(){
+    loadAllData(false);
+  }, 5000);
+}
+
+function loadAllData(showLoading) {
+  dbGet("data", function(err, data) {
+    if(err) { console.error("Sync error:", err); return; }
+    if(!data) data = {};
+    // Convert Firebase objects to arrays
+    state.reqs     = objToArr(data.reqs);
+    state.messages = objToArr(data.messages);
+    state.closedDays = data.closedDays || {};
+    state.notes      = data.notes || {};
+    render();
+  });
+}
+
+function objToArr(obj) {
+  if(!obj) return [];
+  if(Array.isArray(obj)) return obj;
+  return Object.keys(obj).map(function(k){
+    var item = obj[k];
+    item._fbKey = k;
+    return item;
+  }).sort(function(a,b){ return (b.id||0)-(a.id||0); });
+}
+
+// ══ HOLIDAYS ══════════════════════════════════════════════
+function getHolidays(year){
+  var h={};
+  function set(mo,d,name){h[year+"-"+String(mo).padStart(2,"0")+"-"+String(d).padStart(2,"0")]=name;}
+  function nth(mo,wd,n){var c=0,d=1;while(true){if(new Date(year,mo-1,d).getDay()===wd){c++;if(c===n)return d;}d++;}}
+  function last(mo,wd){var d=new Date(year,mo,0).getDate();while(new Date(year,mo-1,d).getDay()!==wd)d--;return d;}
+  set(1,1,"New Year's Day");set(2,14,"Valentine's Day");set(3,17,"St. Patrick's Day");
+  set(6,14,"Flag Day");set(6,19,"Juneteenth");set(7,4,"Independence Day");
+  set(10,31,"Halloween");set(11,11,"Veterans Day");
+  set(12,24,"Christmas Eve");set(12,25,"Christmas Day");set(12,31,"New Year's Eve");
+  set(1,nth(1,1,3),"MLK Jr. Day");set(2,nth(2,1,3),"Presidents' Day");
+  set(5,nth(5,0,2),"Mother's Day");set(5,last(5,1),"Memorial Day");
+  set(6,nth(6,0,3),"Father's Day");set(9,nth(9,1,1),"Labor Day");
+  set(10,nth(10,1,2),"Columbus Day");set(11,nth(11,4,4),"Thanksgiving");
+  var a=year%19,b=Math.floor(year/100),c=year%100,d2=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),hh=(19*a+b-d2-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-hh-k)%7,m=Math.floor((a+11*hh+22*l)/451);
+  var eMo=(hh+l-7*m+114)>>5,eD=((hh+l-7*m+114)%31)+1;
+  set(eMo,eD,"Easter Sunday");
+  var gf=new Date(year,eMo-1,eD);gf.setDate(gf.getDate()-2);
+  set(gf.getMonth()+1,gf.getDate(),"Good Friday");
+  return h;
+}
+
+// ══ HELPERS ══════════════════════════════════════════════
+function todayStr(){return new Date().toISOString().split("T")[0];}
+function minDate(){var d=new Date();d.setDate(d.getDate()+MIN_NOTICE_DAYS);return d.toISOString().split("T")[0];}
+function fmtDate(ds){return ds?new Date(ds+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}):""}
+function fmtShort(ds){return ds?new Date(ds+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):""}
+function addDays(ds,n){var d=new Date(ds+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().split("T")[0];}
+function reqCovers(r,date){return r.startDate<=date&&r.endDate>=date;}
+function dateRange(r){return r.startDate===r.endDate?fmtShort(r.startDate):fmtShort(r.startDate)+" → "+fmtShort(r.endDate);}
+function nowFull(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
+function getSaved(key,def){try{var v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch(e){return def;}}
+function setSaved(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+function countOff(reqs,date,role,shift){return reqs.filter(function(r){if(r.status==="Denied")return false;if(!reqCovers(r,date))return false;return r.allDay||(r.role===role&&r.shift===shift);}).length;}
+function reqsOnDate(reqs,date){return reqs.filter(function(r){return r.status!=="Denied"&&reqCovers(r,date);});}
+
+// ══ STATE ════════════════════════════════════════════════
+var state = {
+  tab:"staff", reqs:[], messages:[], closedDays:{}, notes:{},
+  savedName:getSaved("kr_name",""),
+  mgrOpen:false, mgrSec:"requests", mgrView:"list",
+  pin:"", pinErr:"",
+  form:{name:getSaved("kr_name",""),role:"Server",shift:"AM",startDate:minDate(),endDate:minDate(),reason:"",email:"",phone:"",allDay:false},
+  fErr:"", fd:"", fr:"All", fs:"All", fSt:"All", note:"",
+  toasts:[], calYear:new Date().getFullYear(), calMonth:new Date().getMonth(), calSel:null,
+  chatName:getSaved("kr_name",""), chatRole:"Server", chatText:""
+};
+
+function setState(updates){
+  Object.assign(state,updates);
+  render();
+}
+
+function toast(msg,type){
+  var id=Date.now();
+  state.toasts=state.toasts.concat([{id:id,msg:msg,type:type||"i"}]);
+  render();
+  setTimeout(function(){state.toasts=state.toasts.filter(function(x){return x.id!==id;});render();},4500);
+}
+
+// ══ ACTIONS ══════════════════════════════════════════════
+function submit(){
+  var f=state.form;
+  if(!f.name.trim()){setState({fErr:"Please enter your name."});return;}
+  if(f.startDate<minDate()){setState({fErr:"Requests require at least 3 weeks notice. Earliest: "+fmtShort(minDate())+"."});return;}
+  if(f.endDate<f.startDate){setState({fErr:"End date cannot be before start date."});return;}
+  var d=f.startDate;
+  while(d<=f.endDate){if(state.closedDays[d]){setState({fErr:fmtShort(d)+" is closed by management."});return;}d=addDays(d,1);}
+  var dup=state.reqs.find(function(r){return r.name.trim().toLowerCase()===f.name.trim().toLowerCase()&&r.startDate===f.startDate&&r.endDate===f.endDate&&r.shift===f.shift&&r.role===f.role;});
+  if(dup){setState({fErr:"A matching request already exists under your name."});return;}
+  if(!f.allDay){var dd=f.startDate;while(dd<=f.endDate){if(countOff(state.reqs,dd,f.role,f.shift)>=LIMITS[f.role]){setState({fErr:"The "+f.role+" "+f.shift+" limit is full on "+fmtShort(dd)+"."});return;}dd=addDays(dd,1);}}
+  var newReq={id:Date.now(),name:f.name.trim(),role:f.role,shift:f.shift,startDate:f.startDate,endDate:f.endDate,reason:f.reason.trim(),email:f.email.trim(),phone:f.phone.trim(),allDay:f.allDay,status:"Pending",at:new Date().toLocaleString()};
+  // Save to Firebase
+  dbPush("data/reqs", newReq, function(err){
+    if(err){toast("Error saving request. Check your connection.","e");return;}
+    setSaved("kr_name",newReq.name);
+    state.savedName=newReq.name;
+    state.form=Object.assign({},f,{reason:"",email:"",phone:"",startDate:minDate(),endDate:minDate()});
+    state.fErr="";
+    loadAllData(false);
+    toast(dateRange(newReq)+" request submitted — pending approval.","ok");
+  });
+}
+
+function setReqStatus(fbKey, id, status){
+  dbSet("data/reqs/"+fbKey+"/status", status, function(err){
+    if(err){toast("Error updating. Try again.","e");return;}
+    loadAllData(false);
+    toast("Request marked as "+status+".","ok");
+    // Find the request and send email if they have one
+    var r = state.reqs.find(function(x){ return x._fbKey===fbKey || x.id===id; });
+    if(r && r.email) {
+      var msg = status==="Approved"
+        ? "Great news! Your time-off request for "+dateRange(r)+" ("+r.role+") has been APPROVED. Enjoy your time off!"
+        : "Your time-off request for "+dateRange(r)+" ("+r.role+") has been DENIED. Please speak with your manager.";
+      sendStaffEmail(r.email, r.name, "Time-off request: "+status, msg)
+        .then(function(res){
+          if(res.ok) toast("Email sent to "+r.email,"ok");
+          else toast("Could not send email — check EmailJS settings.","e");
+        });
+    }
+  });
+}
+
+function toggleClose(date){
+  var newVal = !state.closedDays[date];
+  var path = "data/closedDays/"+date.replace(/-/g,"_");
+  if(newVal){
+    dbSet(path, true, function(){loadAllData(false);toast(fmtShort(date)+" closed.","ok");state.calSel=null;});
+  } else {
+    dbDelete(path, function(){loadAllData(false);toast(fmtShort(date)+" reopened.","ok");state.calSel=null;});
+  }
+}
+
+function saveNote(){
+  if(!state.note.trim()) return;
+  var k=(state.fd||todayStr()).replace(/-/g,"_");
+  dbSet("data/notes/"+k, state.note.trim(), function(){
+    loadAllData(false);
+    state.note="";
+    toast("Note saved.","ok");
+  });
+}
+
+function sendChat(isMgr){
+  var text=state.chatText.trim();
+  if(!text) return;
+  var name=isMgr?"Management":(state.chatName.trim()||"Anonymous");
+  if(!isMgr&&state.chatName.trim()) setSaved("kr_name",state.chatName.trim());
+  var msg={id:Date.now(),sender:name,role:isMgr?"manager":state.chatRole,text:text,time:nowFull(),isMgr:isMgr};
+  dbPush("data/messages", msg, function(err){
+    if(err){toast("Could not send message.","e");return;}
+    state.chatText="";
+    var ta=document.getElementById("chat-ta");
+    if(ta) ta.value="";
+    loadAllData(false);
+  });
+}
+
+// ══ DOM HELPERS ══════════════════════════════════════════
+function el(tag,attrs){
+  var node=document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(function(k){
+    if(k==="class") node.className=attrs[k];
+    else if(k==="style"&&typeof attrs[k]==="object") Object.assign(node.style,attrs[k]);
+    else if(k.startsWith("on")) node.addEventListener(k.slice(2).toLowerCase(),attrs[k]);
+    else if(k==="disabled"&&attrs[k]) node.disabled=true;
+    else if(k!=="disabled") node.setAttribute(k,attrs[k]);
+  });
+  for(var i=2;i<arguments.length;i++){
+    var c=arguments[i];
+    if(c===null||c===undefined||c===false) continue;
+    if(typeof c==="string"||typeof c==="number") node.appendChild(document.createTextNode(c));
+    else if(Array.isArray(c)) c.forEach(function(ch){if(ch!=null) node.appendChild(typeof ch==="string"?document.createTextNode(ch):ch);});
+    else node.appendChild(c);
+  }
+  return node;
+}
+function chip(cls,label){return el("span",{class:"chip "+cls},label);}
+function rbadge(role){var c=ROLE_COLORS[role]||"#888";var s="background:"+c+"1A;color:"+c;return el("span",{class:"rbadge",style:s},role);}
+
+// ══ CALENDAR ══════════════════════════════════════════════
+function renderCalendar(){
+  var yr=state.calYear,mo=state.calMonth;
+  var holidays=getHolidays(yr);
+  var today=todayStr();
+  var dIM=new Date(yr,mo+1,0).getDate();
+  var fD=new Date(yr,mo,1).getDay();
+  var dIP=new Date(yr,mo,0).getDate();
+  var cells=[];
+  for(var i=fD-1;i>=0;i--){var d=new Date(yr,mo-1,dIP-i);cells.push({date:d.toISOString().split("T")[0],cur:false});}
+  for(var dd=1;dd<=dIM;dd++){var ds=yr+"-"+String(mo+1).padStart(2,"0")+"-"+String(dd).padStart(2,"0");cells.push({date:ds,cur:true});}
+  while(cells.length%7!==0){var dn=new Date(yr,mo+1,cells.length-fD-dIM+1);cells.push({date:dn.toISOString().split("T")[0],cur:false});}
+  var wrap=el("div",{});
+  var nav=el("div",{class:"cal-nav"},
+    el("button",{class:"cal-btn",onclick:function(){var nm=mo===0?11:mo-1;var ny=mo===0?yr-1:yr;setState({calMonth:nm,calYear:ny});}},"\u2039"),
+    el("span",{class:"cal-mo"},MONTHS[mo]+" "+yr),
+    el("button",{class:"cal-btn",onclick:function(){var nm=mo===11?0:mo+1;var ny=mo===11?yr+1:yr;setState({calMonth:nm,calYear:ny});}},"\u203a")
+  );
+  wrap.appendChild(nav);
+  var hdr=el("div",{class:"cal-grid"});
+  DAYS.forEach(function(d){hdr.appendChild(el("div",{class:"cal-dh"},d));});
+  wrap.appendChild(hdr);
+  var grid=el("div",{class:"cal-grid"});
+  cells.forEach(function(cell){
+    var dr=reqsOnDate(state.reqs,cell.date);
+    var isClosed=!!state.closedDays[cell.date.replace(/-/g,"_")]||!!state.closedDays[cell.date];
+    var holiday=holidays[cell.date];
+    var cls="cal-cell"+((!cell.cur)?" om":"")+(cell.date===today?" today":"")+(isClosed?" closed-day":"");
+    var cellEl=el("div",{class:cls,onclick:function(){setState({calSel:cell.date===state.calSel?null:cell.date});}});
+    cellEl.appendChild(el("div",{class:"cal-num"},String(new Date(cell.date+"T12:00:00").getDate())));
+    if(isClosed) cellEl.appendChild(el("div",{class:"cal-closed"},"CLOSED"));
+    if(holiday) cellEl.appendChild(el("div",{class:"cal-hol"},holiday));
+    dr.slice(0,2).forEach(function(r){var row=el("div",{class:"cal-dot"});var dot=el("div",{class:"dot-sm"});dot.style.background=ROLE_COLORS[r.role]||"#aaa";row.appendChild(dot);row.appendChild(document.createTextNode(r.name.split(" ")[0]));cellEl.appendChild(row);});
+    if(dr.length>2) cellEl.appendChild(el("div",{class:"cal-more"},"+"+( dr.length-2)));
+    grid.appendChild(cellEl);
+  });
+  wrap.appendChild(grid);
+  if(state.calSel){
+    var selDate=state.calSel;
+    var selHol=holidays[selDate];
+    var selClosed=!!state.closedDays[selDate.replace(/-/g,"_")]||!!state.closedDays[selDate];
+    var selReqs=reqsOnDate(state.reqs,selDate);
+    var modal=el("div",{class:"modal-bg",onclick:function(){setState({calSel:null});}});
+    var box=el("div",{class:"modal",onclick:function(e){e.stopPropagation();}});
+    box.appendChild(el("button",{class:"modal-x",onclick:function(){setState({calSel:null});}},"\u2715"));
+    box.appendChild(el("div",{class:"modal-t"},fmtDate(selDate)));
+    if(selHol) box.appendChild(el("div",{class:"modal-hol"},selHol));
+    if(selClosed) box.appendChild(el("div",{class:"al a-e",style:{marginBottom:"12px"}},"This day is closed — no requests accepted."));
+    if(state.mgrOpen){
+      var crow=el("div",{class:"close-row"+(selClosed?" closed":"")});
+      crow.appendChild(el("span",{style:{fontSize:"12px",color:selClosed?"var(--red)":"var(--ink2)"}},selClosed?"Day is closed to requests":"Day is open for requests"));
+      crow.appendChild(el("button",{class:"ct-btn "+(selClosed?"reopen":"close"),onclick:function(){toggleClose(selDate);}},selClosed?"Reopen Day":"Close Day"));
+      box.appendChild(crow);
+    }
+    if(selReqs.length===0){box.appendChild(el("div",{class:"e-note"},"No requests on this day."));}
+    else{selReqs.forEach(function(r){
+      var row=el("div",{class:"rr"});
+      row.appendChild(el("span",{style:{color:ROLE_COLORS[r.role],fontSize:"14px"}},ROLE_GLYPHS[r.role]));
+      var info=el("div",{style:{flex:"1"}});
+      info.appendChild(el("div",{class:"rr-n",style:{fontSize:"14px"}},r.name));
+      info.appendChild(el("div",{class:"rr-dates"},r.allDay?"All Day · "+dateRange(r):r.shift+" Shift"));
+      row.appendChild(info);row.appendChild(rbadge(r.role));row.appendChild(chip("c-"+r.status.toLowerCase(),r.status));
+      box.appendChild(row);
+    });}
+    modal.appendChild(box);
+    wrap.appendChild(modal);
+  }
+  return wrap;
+}
+
+// ══ STAFF PAGE ════════════════════════════════════════════
+function renderStaff(){
+  var f=state.form;
+  var today=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  var wrap=el("div",{class:"wr"});
+  var hero=el("div",{class:"hero"});
+  var heroL=el("div",{});
+  heroL.appendChild(el("div",{class:"h-eye"},"Request Portal"));
+  var ttl=el("div",{class:"h-ttl"});ttl.innerHTML="Requested<br><em>Days Off</em>";
+  heroL.appendChild(ttl);hero.appendChild(heroL);
+  var heroR=el("div",{class:"h-r"});
+  heroR.appendChild(el("div",{class:"h-date"},today));
+  heroR.appendChild(el("div",{class:"h-sub"},"Kata Robata · Houston"));
+  hero.appendChild(heroR);wrap.appendChild(hero);
+  var grid=el("div",{class:"g2"});
+
+  // FORM CARD
+  var fc=el("div",{class:"card"});
+  fc.appendChild(el("div",{class:"card-stripe"}));
+  fc.appendChild(el("div",{class:"clbl"},"Submit a Request"));
+  var notice=el("div",{class:"notice"});
+  notice.appendChild(el("p",{},"All requests are subject to manager approval and will be reviewed within 48 hours."));
+  notice.appendChild(el("p",{},"Limits are enforced per position per shift to ensure proper floor coverage."));
+  var p3=el("p",{});p3.innerHTML="<strong>Please provide at least 3 weeks notice where possible.</strong> Requests within 21 days will not be accepted.";
+  notice.appendChild(p3);fc.appendChild(notice);
+
+  // Name - NO re-render on input
+  var nameFld=el("div",{class:"fld"});
+  nameFld.appendChild(el("label",{class:"lbl"},"Full Name"));
+  var nameIn=el("input",{class:"fi",type:"text",placeholder:"First & Last Name",id:"inp-name",value:f.name});
+  nameIn.addEventListener("input",function(){state.form=Object.assign({},state.form,{name:this.value});});
+  nameFld.appendChild(nameIn);fc.appendChild(nameFld);
+
+  // Position + Shift
+  var psRow=el("div",{class:"frow"});
+  var posW=el("div",{});
+  posW.appendChild(el("label",{class:"lbl"},"Position"));
+  var posEl=el("select",{class:"fi"});
+  STAFF_ROLES.forEach(function(r){var o=el("option",{value:r},r);if(r===f.role)o.selected=true;posEl.appendChild(o);});
+  posEl.addEventListener("change",function(){setState({form:Object.assign({},state.form,{role:this.value})});});
+  posW.appendChild(posEl);psRow.appendChild(posW);
+  var shW=el("div",{});
+  shW.appendChild(el("label",{class:"lbl"},"Shift"));
+  var stg=el("div",{class:"stg"});
+  SHIFTS.forEach(function(s){
+    var cls="sb"+(f.shift===s&&!f.allDay?(" "+(s.toLowerCase())):"");
+    var btn=el("button",{class:cls},s==="AM"?"\u2600 AM":"\u263D PM");
+    btn.addEventListener("click",function(){if(!state.form.allDay) setState({form:Object.assign({},state.form,{shift:s})});});
+    stg.appendChild(btn);
+  });
+  shW.appendChild(stg);psRow.appendChild(shW);fc.appendChild(psRow);
+
+  // All-day toggle
+  var tgl=el("div",{class:"toggle"+(f.allDay?" on":"")});
+  var trk=el("div",{class:"trk"+(f.allDay?" on":"")});trk.appendChild(el("div",{class:"tth"}));
+  var tInfo=el("div",{});tInfo.appendChild(el("div",{class:"tl"},"All Day / Full Day Off"));tInfo.appendChild(el("div",{class:"ts"},"Covers both AM & PM — for vacations or full personal days"));
+  tgl.appendChild(trk);tgl.appendChild(tInfo);
+  tgl.addEventListener("click",function(){setState({form:Object.assign({},state.form,{allDay:!state.form.allDay})});});
+  fc.appendChild(tgl);
+
+  // Dates
+  var dateRow=el("div",{class:"frow"});
+  var sdW=el("div",{});sdW.appendChild(el("label",{class:"lbl"},"Start Date ",el("span",{class:"lbl-s"},"(3 wks min)")));
+  var sdIn=el("input",{class:"fi",type:"date",value:f.startDate,min:minDate()});
+  sdIn.addEventListener("change",function(){var v=this.value;setState({form:Object.assign({},state.form,{startDate:v,endDate:v>state.form.endDate?v:state.form.endDate})});});
+  sdW.appendChild(sdIn);dateRow.appendChild(sdW);
+  var edW=el("div",{});edW.appendChild(el("label",{class:"lbl"},"End Date ",el("span",{class:"lbl-s"},"(same = 1 day)")));
+  var edIn=el("input",{class:"fi",type:"date",value:f.endDate,min:f.startDate});
+  edIn.addEventListener("change",function(){setState({form:Object.assign({},state.form,{endDate:this.value})});});
+  edW.appendChild(edIn);dateRow.appendChild(edW);fc.appendChild(dateRow);
+
+  if(f.startDate!==f.endDate){
+    var days=Math.round((new Date(f.endDate+"T12:00:00")-new Date(f.startDate+"T12:00:00"))/86400000)+1;
+    fc.appendChild(el("div",{class:"al a-i",style:{marginTop:"-6px"}},days+" days: "+fmtShort(f.startDate)+" \u2192 "+fmtShort(f.endDate)));
+  }
+
+  // Reason - NO re-render on input
+  var rsnFld=el("div",{class:"fld"});
+  rsnFld.appendChild(el("label",{class:"lbl"},"Reason ",el("span",{class:"lbl-s"},"(optional)")));
+  var rsnTa=el("textarea",{class:"fi",placeholder:"Vacation, appointment, personal day...",id:"inp-reason"});
+  rsnTa.value=f.reason;
+  rsnTa.addEventListener("input",function(){state.form=Object.assign({},state.form,{reason:this.value});});
+  rsnFld.appendChild(rsnTa);fc.appendChild(rsnFld);
+
+  fc.appendChild(el("div",{class:"divhr"}));
+  fc.appendChild(el("div",{style:{fontSize:"9px",letterSpacing:"3px",textTransform:"uppercase",color:"var(--gold)",marginBottom:"12px",fontWeight:"500"}},"Notification Preferences"));
+
+  // Email + Phone - NO re-render on input
+  var nRow=el("div",{class:"frow"});
+  var emW=el("div",{});emW.appendChild(el("label",{class:"lbl"},"Email ",el("span",{class:"lbl-s"},"(approval notice)")));
+  var emIn=el("input",{class:"fi",type:"email",placeholder:"you@email.com",id:"inp-email",value:f.email});
+  emIn.addEventListener("input",function(){state.form=Object.assign({},state.form,{email:this.value});});
+  emW.appendChild(emIn);nRow.appendChild(emW);
+  var phW=el("div",{});phW.appendChild(el("label",{class:"lbl"},"Phone ",el("span",{class:"lbl-s"},"(SMS notice)")));
+  var phIn=el("input",{class:"fi",type:"tel",placeholder:"(555) 000-0000",id:"inp-phone",value:f.phone});
+  phIn.addEventListener("input",function(){state.form=Object.assign({},state.form,{phone:this.value});});
+  phW.appendChild(phIn);nRow.appendChild(phW);fc.appendChild(nRow);
+
+  if(state.fErr) fc.appendChild(el("div",{class:"al a-e"},state.fErr));
+  fc.appendChild(el("button",{class:"btn",onclick:submit},"Submit Request"));
+
+  // Availability
+  if(!f.allDay&&f.startDate===f.endDate){
+    fc.appendChild(el("div",{class:"av-h"},"Availability \u00b7 "+fmtShort(f.startDate)));
+    var isClosed=state.closedDays[f.startDate]||state.closedDays[f.startDate.replace(/-/g,"_")];
+    if(isClosed) fc.appendChild(el("div",{class:"al a-e"},"This day is closed by management."));
+    STAFF_ROLES.forEach(function(role){
+      var rd=el("div",{class:"av-role"});
+      rd.appendChild(el("div",{class:"av-rn",style:{color:ROLE_COLORS[role]}},ROLE_GLYPHS[role]+" "+role));
+      SHIFTS.forEach(function(shift){
+        var used=countOff(state.reqs,f.startDate,role,shift);
+        var lim=LIMITS[role];var full=used>=lim;
+        var row=el("div",{class:"av-row"});
+        row.appendChild(chip("c-"+shift.toLowerCase(),shift));
+        var dotsEl=el("div",{class:"dots"});
+        for(var i=0;i<lim;i++){var dot=el("div",{class:"dot"});dot.style.background=i<used?(full?"#B43C28":ROLE_COLORS[role]):"var(--sand3)";dotsEl.appendChild(dot);}
+        row.appendChild(dotsEl);
+        row.appendChild(el("span",{class:"av-t"+(full?" av-full":"")},full?"Full":(lim-used)+" open"));
+        rd.appendChild(row);
+      });
+      fc.appendChild(rd);
+    });
+  }
+  grid.appendChild(fc);
+
+  // WHO'S OFF CARD
+  var oc=el("div",{class:"card"});
+  oc.appendChild(el("div",{class:"card-stripe"}));
+  oc.appendChild(el("div",{class:"clbl"},"Who's Off"));
+  oc.appendChild(el("div",{class:"d-pill"},fmtDate(f.startDate)));
+  var isCl=state.closedDays[f.startDate]||state.closedDays[f.startDate.replace(/-/g,"_")];
+  if(isCl) oc.appendChild(el("div",{class:"closed-ban"},"This day has been closed by management."));
+  var noteKey=f.startDate.replace(/-/g,"_");
+  if(state.notes[noteKey]||state.notes[f.startDate]) oc.appendChild(el("div",{class:"m-ban"},el("span",{style:{fontSize:"8px",letterSpacing:"3px",textTransform:"uppercase",fontWeight:"500",opacity:".7"}},"Management \u00b7 "),state.notes[noteKey]||state.notes[f.startDate]));
+  var allDayR=state.reqs.filter(function(r){return r.status!=="Denied"&&r.allDay&&reqCovers(r,f.startDate);});
+  if(allDayR.length>0){
+    oc.appendChild(el("div",{class:"sh-hd sh-all"},"\u2299 All Day Off"));
+    allDayR.forEach(function(r){var row=el("div",{class:"rr"});row.appendChild(el("span",{style:{color:ROLE_COLORS[r.role]}},ROLE_GLYPHS[r.role]));var info=el("div",{style:{flex:"1"}});info.appendChild(el("span",{class:"rr-n"},r.name));if(r.startDate!==r.endDate)info.appendChild(el("div",{class:"rr-dates"},dateRange(r)));row.appendChild(info);row.appendChild(rbadge(r.role));row.appendChild(chip("c-"+r.status.toLowerCase(),r.status));oc.appendChild(row);});
+  }
+  SHIFTS.forEach(function(shift){
+    var dayR=state.reqs.filter(function(r){return r.status!=="Denied"&&!r.allDay&&r.shift===shift&&reqCovers(r,f.startDate);});
+    oc.appendChild(el("div",{class:"sh-hd sh-"+(shift==="AM"?"am":"pm")},(shift==="AM"?"\u2600":"\u263D")+" "+shift+" Shift",el("span",{style:{marginLeft:"auto",opacity:".5",fontWeight:"300",fontSize:"10px"}},dayR.length+" off")));
+    if(dayR.length===0){oc.appendChild(el("div",{class:"e-note"},"No requests"));}
+    else{dayR.forEach(function(r){var row=el("div",{class:"rr"});row.appendChild(el("span",{style:{color:ROLE_COLORS[r.role]}},ROLE_GLYPHS[r.role]));var info=el("div",{style:{flex:"1"}});info.appendChild(el("span",{class:"rr-n"},r.name));if(r.startDate!==r.endDate)info.appendChild(el("div",{class:"rr-dates"},dateRange(r)));row.appendChild(info);row.appendChild(rbadge(r.role));row.appendChild(chip("c-"+r.status.toLowerCase(),r.status));oc.appendChild(row);});}
+  });
+  oc.appendChild(el("div",{class:"orn"},"\u00b7 \u00b7 \u00b7"));
+  var pn=el("p",{style:{fontSize:"11px",color:"var(--ink3)",fontWeight:"300",lineHeight:"1.75",fontStyle:"italic"}});
+  pn.textContent="All requests are subject to manager approval. Limits are enforced per position per shift. Please provide at least 3 weeks notice where possible.";
+  oc.appendChild(pn);
+  grid.appendChild(oc);
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+// ══ CHAT ══════════════════════════════════════════════════
+function renderChat(isMgr){
+  var wrap=el("div",{class:"chat-wrap"});
+  var hdr=el("div",{class:"chat-hdr"});
+  var ttl=el("div",{class:"chat-ttl"});ttl.innerHTML="Team <em>Chat</em>";
+  hdr.appendChild(ttl);
+  hdr.appendChild(el("div",{class:"chat-sub"},"Messages visible to everyone · Management messages highlighted · Updates every 5 seconds"));
+  wrap.appendChild(hdr);
+  var msgs=el("div",{class:"chat-msgs",id:"chat-msgs"});
+  if(state.messages.length===0) msgs.appendChild(el("div",{style:{textAlign:"center",padding:"40px 0",color:"var(--ink4)",fontStyle:"italic",fontSize:"13px"}},"No messages yet — say hello!"));
+  state.messages.forEach(function(m){
+    var div=el("div",{class:"msg "+(m.isMgr?"mgr":"staff")});
+    var meta=el("div",{class:"msg-meta"});
+    if(m.isMgr) meta.appendChild(chip("c-mgr","Management"));
+    meta.appendChild(el("span",{style:{fontWeight:"400",color:"var(--ink2)"}},m.sender));
+    if(!m.isMgr) meta.appendChild(chip("c-staff",m.role));
+    meta.appendChild(el("span",{},"\u00b7 "+m.time));
+    div.appendChild(meta);div.appendChild(el("div",{class:"msg-bub"},m.text));msgs.appendChild(div);
+  });
+  wrap.appendChild(msgs);
+  var inp=el("div",{class:"chat-in"});
+  if(isMgr){inp.appendChild(el("div",{style:{fontSize:"10px",letterSpacing:"2px",textTransform:"uppercase",color:"var(--gold)",fontWeight:"500",marginBottom:"8px"}},"Sending as Management"));}
+  else{
+    var r1=el("div",{class:"chat-row1"});
+    var nameIn=el("input",{class:"cin",type:"text",placeholder:"Your name",style:{flex:"1",minWidth:"120px"},value:state.chatName,id:"chat-name"});
+    nameIn.addEventListener("input",function(){state.chatName=this.value;});
+    nameIn.addEventListener("blur",function(){if(this.value.trim()) setSaved("kr_name",this.value.trim());});
+    var roleIn=el("select",{class:"cin",style:{minWidth:"110px"}});
+    ALL_ROLES.forEach(function(r){var o=el("option",{value:r},r);if(r===state.chatRole)o.selected=true;roleIn.appendChild(o);});
+    roleIn.addEventListener("change",function(){state.chatRole=this.value;});
+    r1.appendChild(nameIn);r1.appendChild(roleIn);
+    r1.appendChild(el("span",{style:{fontSize:"10px",color:"var(--ink3)",alignSelf:"center"}},"Visible to everyone"));
+    inp.appendChild(r1);
+  }
+  var r2=el("div",{class:"chat-row2"});
+  var ta=el("textarea",{class:"chat-ta",placeholder:isMgr?"Write a note to the team\u2026":"Type a message\u2026",id:"chat-ta"});
+  ta.addEventListener("input",function(){state.chatText=this.value;});
+  ta.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat(isMgr);}});
+  var sendBtn=el("button",{class:"chat-send",onclick:function(){sendChat(isMgr);}}, "Send");
+  r2.appendChild(ta);r2.appendChild(sendBtn);inp.appendChild(r2);wrap.appendChild(inp);
+  setTimeout(function(){var m=document.getElementById("chat-msgs");if(m)m.scrollTop=m.scrollHeight;},50);
+  return wrap;
+}
+
+// ══ MANAGER ═══════════════════════════════════════════════
+function renderManager(){
+  if(!state.mgrOpen){
+    var gate=el("div",{class:"pg-gate"});
+    var box=el("div",{class:"pin-box"});
+    box.appendChild(el("div",{class:"p-orn"},"\u2318"));
+    box.appendChild(el("div",{class:"p-ttl"},"Manager Access"));
+    box.appendChild(el("div",{class:"p-sub"},"Enter your PIN to continue"));
+    var pinIn=el("input",{class:"p-in",type:"password",maxlength:"4",placeholder:"\u00b7 \u00b7 \u00b7 \u00b7",id:"pin-input"});
+    pinIn.addEventListener("input",function(){state.pin=this.value;state.pinErr="";});
+    pinIn.addEventListener("keydown",function(e){if(e.key==="Enter"){if(state.pin===MGR_PIN){setState({mgrOpen:true,pinErr:""});}else{setState({pinErr:"Incorrect PIN."});}}});
+    box.appendChild(pinIn);
+    if(state.pinErr) box.appendChild(el("div",{class:"al a-e"},state.pinErr));
+    box.appendChild(el("button",{class:"btn",style:{maxWidth:"180px",margin:"0 auto"},onclick:function(){if(state.pin===MGR_PIN){setState({mgrOpen:true,pinErr:""});}else{setState({pinErr:"Incorrect PIN."});}}},"Unlock"));
+    gate.appendChild(box);return gate;
+  }
+
+  var wrap=el("div",{class:"wr"});
+  var top=el("div",{class:"mg-top"});
+  var topL=el("div",{});topL.appendChild(el("div",{class:"h-eye"},"Manager Dashboard"));
+  var topTtl=el("div",{class:"h-ttl",style:{fontSize:"34px"}});topTtl.innerHTML="Request <em>Overview</em>";
+  topL.appendChild(topTtl);top.appendChild(topL);
+  var topR=el("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}});
+  ["requests","chat","settings"].forEach(function(sec){
+    var lbl=sec==="requests"?"Requests":sec==="chat"?"Team Chat":"Settings";
+    topR.appendChild(el("button",{class:"vbtn"+(state.mgrSec===sec?" on":""),onclick:function(){setState({mgrSec:sec});}},lbl));
+  });
+  topR.appendChild(el("button",{class:"lk",onclick:function(){setState({mgrOpen:false,pin:"",pinErr:""});}}, "Lock"));
+  top.appendChild(topR);wrap.appendChild(top);
+
+  if(state.mgrSec==="chat"){
+    var cw=el("div",{style:{margin:"-36px -24px 0",height:"calc(100vh - 72px - 110px)"}});
+    cw.appendChild(renderChat(true));wrap.appendChild(cw);return wrap;
+  }
+
+  if(state.mgrSec==="settings"){
+    var sw=el("div",{style:{marginTop:"20px",paddingTop:"20px",borderTop:"1px solid var(--sand3)"}});
+    sw.appendChild(el("div",{class:"clbl"},"Notification Setup"));
+    var sg=el("div",{class:"g2",style:{gap:"20px"}});
+    var es=el("div",{});
+    es.appendChild(el("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:"400",marginBottom:"4px"}},"Email via EmailJS"));
+    es.appendChild(el("div",{style:{fontSize:"12px",color:"var(--ink3)",fontWeight:"300",marginBottom:"16px",lineHeight:"1.6"}},"Free tier: 200 emails/month."));
+    ["Go to emailjs.com and create a free account.","Email Services → connect Gmail or Outlook → copy Service ID.","Email Templates → create template with {{to_name}}, {{subject}}, {{message}}.","Account → API Keys → copy Public Key.","In the code, fill in the 3 values."].forEach(function(t,i){var s=el("div",{class:"set-step"});s.appendChild(el("div",{class:"sn-num"},String(i+1)));s.appendChild(el("div",{class:"st-t"},t));es.appendChild(s);});
+    var ss=el("div",{});
+    ss.appendChild(el("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:"400",marginBottom:"4px"}},"SMS via Native Messages"));
+    ss.appendChild(el("div",{style:{fontSize:"12px",color:"var(--ink3)",fontWeight:"300",marginBottom:"16px",lineHeight:"1.6"}},"No account needed."));
+    ["Staff enter phone when submitting.","After approving/denying, tap the SMS button.","Messages opens pre-filled — press Send."].forEach(function(t,i){var s=el("div",{class:"set-step"});s.appendChild(el("div",{class:"sn-num"},String(i+1)));s.appendChild(el("div",{class:"st-t"},t));ss.appendChild(s);});
+    sg.appendChild(es);sg.appendChild(ss);sw.appendChild(sg);wrap.appendChild(sw);return wrap;
+  }
+
+  // REQUESTS
+  var pending=state.reqs.filter(function(r){return r.status==="Pending";});
+  if(pending.length>0){
+    var pb=el("div",{class:"pb"});pb.appendChild(el("div",{class:"pb-dot"}));pb.appendChild(el("div",{class:"pb-num"},String(pending.length)));
+    var pbt=el("div",{});pbt.appendChild(el("div",{class:"pb-t"},pending.length+" request"+(pending.length===1?"":"s")+" awaiting review"));pbt.appendChild(el("div",{class:"pb-s"},"Notifications send automatically on approval or denial"));pb.appendChild(pbt);wrap.appendChild(pb);
+  }
+  var vbtns=el("div",{class:"vbtns"});
+  vbtns.appendChild(el("button",{class:"vbtn"+(state.mgrView==="list"?" on":""),onclick:function(){setState({mgrView:"list"});}},"\u2261 List"));
+  vbtns.appendChild(el("button",{class:"vbtn"+(state.mgrView==="calendar"?" on":""),onclick:function(){setState({mgrView:"calendar"});}},"\u229e Calendar"));
+  wrap.appendChild(vbtns);
+
+  if(state.mgrView==="calendar"){
+    var cc=el("div",{class:"card"});cc.appendChild(el("div",{class:"card-stripe"}));cc.appendChild(el("div",{class:"clbl"},"Monthly Calendar \u2014 click any day to view or close it"));cc.appendChild(renderCalendar());wrap.appendChild(cc);return wrap;
+  }
+
+  var g21=el("div",{class:"g21"});
+  var lc=el("div",{class:"card"});lc.appendChild(el("div",{class:"card-stripe"}));
+  var filtered=state.reqs.filter(function(r){
+    if(state.fd&&!reqCovers(r,state.fd)) return false;
+    if(state.fr!=="All"&&r.role!==state.fr) return false;
+    if(state.fs!=="All"&&r.shift!==state.fs) return false;
+    if(state.fSt!=="All"&&r.status!==state.fSt) return false;
+    return true;
+  });
+  lc.appendChild(el("div",{class:"clbl"},"All Requests ",el("span",{style:{fontFamily:"'Playfair Display',serif",fontSize:"12px",fontWeight:"400",color:"var(--ink3)",letterSpacing:"0",textTransform:"none"}},filtered.length+" shown")));
+
+  var fbar=el("div",{class:"fbar"});
+  function addF(lbl,type,val,opts,onChange){var ff=el("div",{class:"ff"});ff.appendChild(el("label",{},lbl));var inp;if(type==="date"){inp=el("input",{type:"date",value:val});inp.addEventListener("change",function(){onChange(this.value);});}else{inp=el("select",{});opts.forEach(function(o){var opt=el("option",{value:o},o);if(o===val)opt.selected=true;inp.appendChild(opt);});inp.addEventListener("change",function(){onChange(this.value);});}ff.appendChild(inp);fbar.appendChild(ff);}
+  addF("Date","date",state.fd,[],function(v){setState({fd:v});});
+  addF("Position","select",state.fr,["All"].concat(STAFF_ROLES),function(v){setState({fr:v});});
+  addF("Shift","select",state.fs,["All"].concat(SHIFTS),function(v){setState({fs:v});});
+  addF("Status","select",state.fSt,["All","Pending","Approved","Denied"],function(v){setState({fSt:v});});
+  if(state.fd) fbar.appendChild(el("button",{style:{alignSelf:"flex-end",padding:"6px 11px",background:"transparent",border:"1px solid var(--sand3)",borderRadius:"var(--r)",cursor:"pointer",fontSize:"10px",color:"var(--ink3)",fontFamily:"'DM Sans',sans-serif"},onclick:function(){setState({fd:""});}},"\u2715 Clear"));
+  lc.appendChild(fbar);
+
+  var noteSec=el("div",{style:{marginBottom:"14px"}});
+  noteSec.appendChild(el("label",{class:"lbl"},"Notes from Management"));
+  var noteBar=el("div",{class:"note-bar"});
+  var noteIn=el("input",{class:"fi",id:"note-input",style:{flex:"1"},placeholder:"Visible note for staff...",value:state.note});
+  noteIn.addEventListener("input",function(){state.note=this.value;});
+  noteIn.addEventListener("keydown",function(e){if(e.key==="Enter") saveNote();});
+  noteBar.appendChild(noteIn);noteBar.appendChild(el("button",{class:"note-sv",onclick:saveNote},"Save"));
+  noteSec.appendChild(noteBar);
+  var nk=state.fd?(state.fd.replace(/-/g,"_")):null;
+  if(nk&&(state.notes[nk]||state.notes[state.fd])) noteSec.appendChild(el("div",{class:"m-ban"},"Active: "+(state.notes[nk]||state.notes[state.fd])));
+  lc.appendChild(noteSec);
+
+  if(state.fd){
+    var isCl2=state.closedDays[state.fd]||state.closedDays[state.fd.replace(/-/g,"_")];
+    var crow=el("div",{class:"close-row"+(isCl2?" closed":"")});
+    crow.appendChild(el("span",{style:{fontSize:"12px",color:isCl2?"var(--red)":"var(--ink2)"}},isCl2?fmtShort(state.fd)+" is closed":fmtShort(state.fd)+" is open"));
+    crow.appendChild(el("button",{class:"ct-btn "+(isCl2?"reopen":"close"),onclick:function(){toggleClose(state.fd);}},isCl2?"Reopen Day":"Close Day"));
+    lc.appendChild(crow);
+  }
+  lc.appendChild(el("div",{class:"divhr",style:{marginTop:"0"}}));
+
+  if(filtered.length===0){var emp=el("div",{class:"empty"});emp.appendChild(el("div",{class:"empty-g"},"\u25c7"));emp.appendChild(el("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:"18px",color:"var(--ink3)"}},"No requests found"));emp.appendChild(el("div",{style:{fontSize:"12px",color:"var(--ink4)",marginTop:"4px"}},"Try clearing your filters"));lc.appendChild(emp);}
+  else{
+    filtered.forEach(function(r){
+      var mc=el("div",{class:"mc"});
+      var mct=el("div",{class:"mc-top"});
+      mct.appendChild(el("span",{style:{color:ROLE_COLORS[r.role],fontSize:"15px"}},ROLE_GLYPHS[r.role]));
+      mct.appendChild(el("span",{class:"mc-n"},r.name));
+      mct.appendChild(rbadge(r.role));
+      mct.appendChild(r.allDay?chip("c-allday","All Day"):chip("c-"+(r.shift.toLowerCase()),r.shift));
+      mct.appendChild(chip("c-"+r.status.toLowerCase(),r.status));
+      mc.appendChild(mct);
+      var mcm=el("div",{class:"mc-m"});
+      mcm.appendChild(el("span",{},"📅 "+dateRange(r)));
+      if(r.reason) mcm.appendChild(el("span",{},"💬 "+r.reason));
+      if(r.email) mcm.appendChild(el("span",{},"\u2709 "+r.email));
+      if(r.phone) mcm.appendChild(el("span",{},"📱 "+r.phone));
+      mcm.appendChild(el("span",{style:{marginLeft:"auto",fontSize:"10px"}},r.at));
+      mc.appendChild(mcm);
+      var mca=el("div",{class:"mc-a"});
+      var fbKey=r._fbKey;
+      var appBtn=el("button",{class:"ab ab-a",onclick:function(){setReqStatus(fbKey,r.id,"Approved");}},"\u2713 Approve");if(r.status==="Approved")appBtn.disabled=true;
+      var denBtn=el("button",{class:"ab ab-d",onclick:function(){setReqStatus(fbKey,r.id,"Denied");}},"\u2717 Deny");if(r.status==="Denied")denBtn.disabled=true;
+      var penBtn=el("button",{class:"ab ab-p",onclick:function(){setReqStatus(fbKey,r.id,"Pending");}},"\u21ba Pending");if(r.status==="Pending")penBtn.disabled=true;
+      mca.appendChild(appBtn);mca.appendChild(denBtn);mca.appendChild(penBtn);mc.appendChild(mca);
+      if(r.status!=="Pending"&&(r.email||r.phone)){
+        var ns=el("div",{class:"notif-sec"});
+        ns.appendChild(el("span",{class:"notif-lbl"},"Notify:"));
+        if(r.phone){var smsA=el("a",{class:"nb",href:"sms:"+r.phone.replace(/\D/g,"")+"?body="+encodeURIComponent(r.status==="Approved"?"Hi "+r.name+", your time-off request for "+dateRange(r)+" ("+r.role+") was APPROVED. Enjoy! — Kata Robata":"Hi "+r.name+", your time-off request for "+dateRange(r)+" ("+r.role+") was DENIED. Please see your manager. — Kata Robata")},"📱 SMS");ns.appendChild(smsA);}
+        mc.appendChild(ns);
+      }
+      lc.appendChild(mc);
+    });
+  }
+  g21.appendChild(lc);
+
+  var sidebar=el("div",{});
+  if(state.fd){
+    var capCard=el("div",{class:"card"});capCard.appendChild(el("div",{class:"card-stripe"}));capCard.appendChild(el("div",{class:"clbl"},"Capacity \u2014 "+fmtShort(state.fd)));
+    STAFF_ROLES.forEach(function(role){
+      var cr=el("div",{class:"cap-r"});cr.appendChild(el("div",{class:"cap-rn",style:{color:ROLE_COLORS[role]}},ROLE_GLYPHS[role]+" "+role));
+      SHIFTS.forEach(function(shift){
+        var used=countOff(state.reqs,state.fd,role,shift);var lim=LIMITS[role];var full=used>=lim;var pct=Math.min((used/lim)*100,100);
+        var csr=el("div",{class:"cap-sr"});var cl=el("div",{class:"cap-l"});cl.appendChild(chip("c-"+shift.toLowerCase(),shift));cl.appendChild(el("span",{style:{color:full?"#B43C28":"var(--ink3)",fontWeight:full?"600":"300",fontSize:"11px"}},full?"Full":used+"/"+lim));csr.appendChild(cl);
+        var tr=el("div",{class:"cap-tr"});var tf=el("div",{class:"cap-f",style:{width:pct+"%",background:full?"#B43C28":pct>60?"#C8A000":ROLE_COLORS[role]}});tr.appendChild(tf);csr.appendChild(tr);cr.appendChild(csr);
+      });
+      capCard.appendChild(cr);
+    });
+    sidebar.appendChild(capCard);
+  }
+  var sc=el("div",{class:"card"});sc.appendChild(el("div",{class:"card-stripe"}));sc.appendChild(el("div",{class:"clbl"},"All-Time Stats"));
+  var sg=el("div",{class:"stats"});
+  [{n:state.reqs.filter(function(r){return r.status==="Pending";}).length,l:"Pending",c:"#7A5000"},{n:state.reqs.filter(function(r){return r.status==="Approved";}).length,l:"Approved",c:"var(--green)"},{n:state.reqs.filter(function(r){return r.status==="Denied";}).length,l:"Denied",c:"var(--red)"}].forEach(function(s){var sb=el("div",{class:"sbox"});sb.appendChild(el("div",{class:"sn",style:{color:s.c}},String(s.n)));sb.appendChild(el("div",{class:"sl"},s.l));sg.appendChild(sb);});
+  sc.appendChild(sg);sidebar.appendChild(sc);
+  g21.appendChild(sidebar);wrap.appendChild(g21);
+  return wrap;
+}
+
+// ══ TOPBAR ════════════════════════════════════════════════
+function renderTopbar(){
+  var tb=document.getElementById("topbar");
+  if(!tb) return;
+  tb.innerHTML="";
+  var inner=el("div",{class:"tb-inner"});
+  var brand=el("div",{class:"tb-brand"});
+  brand.appendChild(el("span",{class:"tb-name"},"Kata Robata Scheduler"));
+  brand.appendChild(el("span",{class:"tb-sub"},"Days Off Portal"));
+  inner.appendChild(brand);
+  var tabs=el("div",{class:"tb-tabs"});
+  [["staff","Request Off"],["chat","Team Chat"],["manager","Manager"]].forEach(function(pair){
+    var btn=el("button",{class:"tab"+(state.tab===pair[0]?" on":""),onclick:function(){setState({tab:pair[0]});}},pair[1]);
+    if(pair[0]==="manager"){var pc=state.reqs.filter(function(r){return r.status==="Pending";}).length;if(pc>0) btn.appendChild(el("span",{class:"badge"},String(pc)));}
+    tabs.appendChild(btn);
+  });
+  inner.appendChild(tabs);tb.appendChild(inner);
+}
+
+// ══ MAIN RENDER ═══════════════════════════════════════════
+function render(){
+  renderTopbar();
+  var main=document.getElementById("main");
+  if(!main) return;
+  // Save focused element
+  var focId=document.activeElement?document.activeElement.id:null;
+  var focVal=document.activeElement?document.activeElement.value:null;
+  var focSel=document.activeElement?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;
+
+  main.innerHTML="";
+  if(state.tab==="staff") main.appendChild(renderStaff());
+  else if(state.tab==="chat") main.appendChild(renderChat(false));
+  else if(state.tab==="manager") main.appendChild(renderManager());
+
+  // Restore focus
+  if(focId){
+    var el2=document.getElementById(focId);
+    if(el2){
+      el2.focus();
+      if(focVal!==null) el2.value=focVal;
+      try{if(focSel) el2.setSelectionRange(focSel.end,focSel.end);}catch(e){}
+    }
+  }
+
+  // Toasts
+  var tw=document.getElementById("toasts");
+  if(tw){tw.innerHTML="";state.toasts.forEach(function(t){tw.appendChild(el("div",{class:"toast t-"+t.type},t.msg));});}
+}
+
+// ══ INIT ══════════════════════════════════════════════════
+document.getElementById("app").innerHTML=
+  '<nav class="tb" id="topbar"></nav>' +
+  '<div class="ht"></div>' +
+  '<div id="main"></div>' +
+  '<div class="tw" id="toasts"></div>' +
+  '<div class="sync-bar" id="sync-bar">Live \u2022 Syncing with Firebase</div>';
+
+// Load initial data then start polling
+loadAllData(true);
+startPolling();
+</script>
+</body>
+</html>
