@@ -268,11 +268,31 @@ function dbDelete(path, cb) {
 }
 
 // Poll for updates every 5 seconds
+// But skip re-render if user is actively typing in an input field
 var pollInterval = null;
+var userIsTyping = false;
+var typingTimer = null;
+
+document.addEventListener("focusin", function(e){
+  if(e.target && (e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")){
+    userIsTyping = true;
+  }
+});
+document.addEventListener("focusout", function(e){
+  if(e.target && (e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")){
+    // Wait a moment before allowing re-renders again
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(function(){ userIsTyping = false; }, 500);
+  }
+});
+
 function startPolling() {
   if(pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(function(){
-    loadAllData(false);
+    // Only poll and re-render if user is not actively typing
+    if(!userIsTyping){
+      loadAllData(false);
+    }
   }, 5000);
 }
 
@@ -349,6 +369,8 @@ var state = {
 
 function setState(updates){
   Object.assign(state,updates);
+  // Always render for tab changes and important UI updates
+  // but check if we need to preserve focus
   render();
 }
 
@@ -915,23 +937,33 @@ function render(){
   renderTopbar();
   var main=document.getElementById("main");
   if(!main) return;
-  // Save focused element
-  var focId=document.activeElement?document.activeElement.id:null;
-  var focVal=document.activeElement?document.activeElement.value:null;
-  var focSel=document.activeElement?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;
+  // Save focused element info
+  var activeEl=document.activeElement;
+  var focId=activeEl?activeEl.id:null;
+  var focVal=activeEl?activeEl.value:null;
+  var focTag=activeEl?activeEl.tagName:null;
+  var focSel=null;
+  try{ if(activeEl&&activeEl.selectionStart!==undefined) focSel={start:activeEl.selectionStart,end:activeEl.selectionEnd}; }catch(e){}
 
   main.innerHTML="";
   if(state.tab==="staff") main.appendChild(renderStaff());
   else if(state.tab==="chat") main.appendChild(renderChat(false));
   else if(state.tab==="manager") main.appendChild(renderManager());
 
-  // Restore focus
+  // Restore focus and cursor position after re-render
   if(focId){
     var el2=document.getElementById(focId);
     if(el2){
+      // Set value first to make sure it matches what user typed
+      if(focVal!==null && focVal!==undefined) el2.value=focVal;
       el2.focus();
-      if(focVal!==null) el2.value=focVal;
-      try{if(focSel) el2.setSelectionRange(focSel.end,focSel.end);}catch(e){}
+      // Restore cursor to end of text
+      try{
+        if(typeof el2.setSelectionRange==="function"){
+          var pos=focVal?focVal.length:0;
+          el2.setSelectionRange(pos,pos);
+        }
+      }catch(e){}
     }
   }
 
